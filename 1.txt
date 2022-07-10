@@ -1,0 +1,36 @@
+192.168.10.50
+192.168.10.1
+255.255.255.0
+reg:
+0: 0~5 0 idle 1:getdata   communication condition:idle 0: othermachine send data then write 1,system find the change write 0.
+01 1bit 0 stop 1 run
+02  16bit 0~0xffff channal set
+03  16bit pwm_on
+04  16bit pwm_off
+write格式：
+[S_I2_R1_1000_0910]
+[S_I2_R0_1000_0909]
+[S_1000_R0_1001_0980]
+[S_1000_R1_1_0836]
+[S_1000_R0_1_0835]
+[S_1000_R2_61680_1049]//f0f0
+[S_1000_R2_3855_1001]
+[S_1000_R3_100_0934]
+[S_1000_R4_200_0936]
+
+
+reponse:
+[M_1000_R1_0910]
+注意R0 为设置地址
+R1 run,stop, 0,1
+R2 channal
+R3 pwml
+r4 pwmh
+read format:
+[R_1000_R1_0910]
+reponse:
+[R_1000_R1_0691]
+[R_1000_R2_0692]
+[R_1000_R3_0693]
+[R_1000_R4_0694]
+
