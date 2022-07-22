@@ -25,11 +25,21 @@ pwm_high = '0'
 # 创建LED对象
 led  = Pin(0, Pin.OUT)
 cfg0 = Pin(8, Pin.OUT)
+
+relay1 = Pin(13, Pin.OUT)
+relay2 = Pin(12, Pin.OUT)
+relay3 = Pin(11, Pin.OUT)
+
+relay1.value(0)
+relay2.value(0)
+relay3.value(0)
+
+uart = UART(1, baudrate=115200, tx=Pin(8), rx=Pin(9))
+time.sleep(3)
 cfg0.value(1)
 time.sleep(2)
-uart = UART(1, baudrate=115200, tx=Pin(8), rx=Pin(9))
-txData = b'hello world\n\r'
-uart.write(txData)
+#txData = b'hello world\n\r'
+#uart.write(txData)
 time.sleep(0.1)
 rxData = bytes()
 save_flag = 0
@@ -46,11 +56,11 @@ def twinkle(tim):
     led.toggle()
 def makereponse(regidstring,datastring):
     answerstring = '[M_'+ machineid + '_' + regidstring + '_' + datastring + '_'
-    print(answerstring)
+    #print(answerstring)
     checkcode = ccmd.get_check(answerstring[1:])
     answerstring = answerstring + str(checkcode)
     answerstring = answerstring + ']'
-    print(answerstring)
+    #print(answerstring)
     uart.write(answerstring.encode())
     
 # 构建定时器
@@ -63,8 +73,9 @@ def makereponse(regidstring,datastring):
 counter = 0
 uad = rad.user_adc()
 t = machine.Timer()
-t.init(period=1000, mode=machine.Timer.PERIODIC, callback = uad.adc_convert)
-
+t.init(period=50, mode=machine.Timer.PERIODIC, callback = uad.adc_convert)
+time.sleep(0.1)
+makereponse('R0', 'MCOK')
 while True:
     counter = counter + 1
     if(counter == 20000):
@@ -76,11 +87,17 @@ while True:
         start_ms = time.ticks_ms()
         save_flag = 1
         # print(rxData)
+
     if save_flag == 1:
         # print('start ms:',end ='')
         # print(start_ms)
         # current_ms = time.ticks_ms()
-        if time.ticks_diff(time.ticks_ms(), start_ms) > 5:
+        timeoutflag = False
+        try:
+            timeoutflag = time.ticks_diff(time.ticks_ms(), start_ms) > 2
+        except Exception as e:
+            print(e)
+        if timeoutflag:
             #raise TimeoutError
             # print('current ms:', end='')
             # print(current_ms)
@@ -109,9 +126,26 @@ while True:
                                 idrd.writeid(idrd.file,machineid)
                                 makereponse(uhandle_array[2], machineid)
 
-                            # if uhandle_array[2] == 'R1':
-                            #     runflag = uhandle_array[3]
-                            #     makereponse(uhandle_array[2], runflag)
+                            if uhandle_array[2] == 'R1':
+                                uad.setchannal(int(uhandle_array[3]))
+                                print('adc channal',uad.channal)
+                                makereponse(uhandle_array[2], str(uad.channal))
+                                if (uad.channal == 1):
+                                    relay1.value(0)
+                                    relay2.value(0)
+                                    relay3.value(0)
+                                if (uad.channal == 2):
+                                    relay1.value(1)
+                                    relay2.value(0)
+                                    relay3.value(0)
+                                if (uad.channal == 3):
+                                    relay1.value(0)
+                                    relay2.value(1)
+                                    relay3.value(0)
+                                if (uad.channal == 4):
+                                    relay1.value(0)
+                                    relay2.value(0)
+                                    relay3.value(1)
                             #     if runflag == '1':
                             #         print('pwm run.')
                             #         pwm = PIOPWM(0, 0, max_count=int(pwm_low) + int(pwm_high), count_freq=10_000_000)  # 10M
@@ -132,8 +166,8 @@ while True:
                             if uhandle_array[2] == 'R2':
                                 d = uad.get_average()
                                 c = round(d,3)
-                                print('c:',end = '')
-                                print(c)
+                                #print('c:',end = '')
+                                #print(c)
                                 makereponse(uhandle_array[2], str(c))
 
                             # if uhandle_array[2] == 'R2':
